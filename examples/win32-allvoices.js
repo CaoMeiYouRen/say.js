@@ -10,12 +10,13 @@ const say = require('../')
 
 let voices = [
   { voice: 'Microsoft David Desktop', text: 'No people recognize me by my voice.' },
-  { voice: 'Microsoft Zira Desktop', text: 'No people recognize me by my voice.' }
+  { voice: 'Microsoft Zira Desktop', text: 'No people recognize me by my voice.' },
+  { voice: 'Microsoft Huihui Desktop', text: '这是一段中文语音' },
 ]
 
 sayIt(0)
 
-function sayIt (voice) {
+function sayIt(voice) {
   let v = voices[voice]
   console.log(v.voice)
 

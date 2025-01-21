@@ -6,12 +6,12 @@ const BASE_SPEED = 0 // Unsupported
 const COMMAND = 'powershell'
 
 class SayPlatformWin32 extends SayPlatformBase {
-  constructor () {
+  constructor() {
     super()
     this.baseSpeed = BASE_SPEED
   }
 
-  buildSpeakCommand ({ text, voice, speed }) {
+  buildSpeakCommand({ text, voice, speed }) {
     let args = []
     let pipedData = ''
     let options = {}
@@ -27,16 +27,20 @@ class SayPlatformWin32 extends SayPlatformBase {
       psCommand += `$speak.Rate = ${adjustedSpeed};`
     }
 
-    psCommand += `$speak.Speak([Console]::In.ReadToEnd())`
+    // Convert text to UTF-16LE and escape for PowerShell
+    let encodedText = Buffer.from(text, 'utf16le').toString('base64')
+    psCommand += `$bytes = [System.Convert]::FromBase64String('${encodedText}');`
+    psCommand += `$text = [System.Text.Encoding]::Unicode.GetString($bytes);`
+    psCommand += `$speak.Speak($text)`
 
-    pipedData += text
     args.push(psCommand)
     options.shell = true
+    options.encoding = 'utf16le'
 
     return { command: COMMAND, args, pipedData, options }
   }
 
-  buildExportCommand ({ text, voice, speed, filename }) {
+  buildExportCommand({ text, voice, speed, filename }) {
     let args = []
     let pipedData = ''
     let options = {}
@@ -66,17 +70,17 @@ class SayPlatformWin32 extends SayPlatformBase {
     return { command: COMMAND, args, pipedData, options }
   }
 
-  runStopCommand () {
+  runStopCommand() {
     this.child.stdin.pause()
     childProcess.exec(`taskkill /pid ${this.child.pid} /T /F`)
   }
 
-  convertSpeed (speed) {
+  convertSpeed(speed) {
     // Overriden to map playback speed (as a ratio) to Window's values (-10 to 10, zero meaning x1.0)
     return Math.max(-10, Math.min(Math.round((9.0686 * Math.log(speed)) - 0.1806), 10))
   }
 
-  getVoices () {
+  getVoices() {
     let args = []
     let psCommand = 'Add-Type -AssemblyName System.speech;$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;$speak.GetInstalledVoices() | % {$_.VoiceInfo.Name}'
     args.push(psCommand)
